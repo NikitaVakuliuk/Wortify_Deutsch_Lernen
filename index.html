@@ -1,482 +1,882 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uk">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DeutschLernen — Вивчення німецьких слів з ШІ</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Lucide Icons CDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- Firebase Compatibility SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-  
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row font-sans antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeutschLernen — Вивчення німецьких слів з ШІ</title>
 
-  <!-- Desktop Sidebar -->
-  <aside class="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-6 flex-shrink-0">
-    <div class="flex items-center space-x-3 px-2">
-      <div class="bg-indigo-600 p-2 rounded-xl">
-        <i data-lucide="languages" class="w-6 h-6 text-white"></i>
-      </div>
-      <div>
-        <h1 class="font-bold text-lg leading-tight">DeutschLernen</h1>
-        <p class="text-xs text-slate-400">Тренажер слів + ШІ</p>
-      </div>
-    </div>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <nav class="space-y-1 flex-1">
-      <button onclick="switchTab('cards')" id="nav-cards" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body
+    class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row font-sans antialiased"
+  >
+    <!-- Desktop Sidebar -->
+    <aside
+      class="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-6 flex-shrink-0"
+    >
+      <div class="flex items-center space-x-3 px-2">
+        <div class="bg-indigo-600 p-2 rounded-xl">
+          <i data-lucide="languages" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">DeutschLernen</h1>
+          <p class="text-xs text-slate-400">Тренажер слів + ШІ</p>
+        </div>
+      </div>
+
+      <nav class="space-y-1 flex-1">
+        <button
+          onclick="switchTab('cards')"
+          id="nav-cards"
+          class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <i data-lucide="layers" class="w-5 h-5"></i>
+          <span>Картки</span>
+        </button>
+        <button
+          onclick="switchTab('ai-gen')"
+          id="nav-ai-gen"
+          class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i>
+          <span>Генератор ШІ</span>
+        </button>
+        <button
+          onclick="switchTab('quiz')"
+          id="nav-quiz"
+          class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+          <span>Тестування</span>
+        </button>
+        <button
+          onclick="switchTab('match')"
+          id="nav-match"
+          class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <i data-lucide="gamepad-2" class="w-5 h-5"></i>
+          <span>З'єднай пари</span>
+        </button>
+        <button
+          onclick="switchTab('dict')"
+          id="nav-dict"
+          class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <i data-lucide="book-open" class="w-5 h-5"></i>
+          <span>Словник</span>
+        </button>
+      </nav>
+
+      <!-- Sync Indicator & Stats summary -->
+      <div
+        class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2"
+      >
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Синхронізація:</span>
+          <span id="sync-status-badge" class="font-medium text-slate-500"
+            >Локальна</span
+          >
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Всього слів:</span>
+          <span id="stat-total" class="font-bold text-white">0</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400">Вивчено (Рівень 5):</span>
+          <span id="stat-learned" class="font-bold text-emerald-400">0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main
+      class="flex-1 flex flex-col min-h-screen md:min-h-0 overflow-y-auto pb-20 md:pb-6"
+    >
+      <!-- Header bar -->
+      <header
+        class="border-b border-slate-800 p-4 flex items-center justify-between bg-slate-900/50 backdrop-blur sticky top-0 z-10"
+      >
+        <div class="flex items-center space-x-3 md:hidden">
+          <div class="bg-indigo-600 p-1.5 rounded-lg">
+            <i data-lucide="languages" class="w-5 h-5 text-white"></i>
+          </div>
+          <span class="font-bold">DeutschLernen</span>
+        </div>
+
+        <div
+          id="tab-title"
+          class="hidden md:block font-semibold text-slate-200"
+        >
+          Картки для вивчення
+        </div>
+
+        <div class="flex items-center space-x-2 ml-auto">
+          <button
+            onclick="openSettingsModal()"
+            class="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-lg transition"
+            title="Налаштування API та Хмари"
+          >
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+          <button
+            onclick="openAddModal()"
+            class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium"
+          >
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Додати слово</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab Content Area -->
+      <div class="p-4 sm:p-6 max-w-4xl w-full mx-auto flex-1 flex flex-col">
+        <!-- TAB: FLASHCARDS -->
+        <section
+          id="tab-cards-content"
+          class="tab-content flex-1 flex flex-col items-center justify-center space-y-6"
+        >
+          <!-- Фільтри карток для вивчення -->
+          <div
+            class="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-slate-400 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80"
+          >
+            <span id="card-counter" class="font-medium text-slate-300"
+              >Слово 0 з 0</span
+            >
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center space-x-1">
+                <label for="filter-mode">Режим:</label>
+                <select
+                  id="filter-mode"
+                  onchange="prepareFlashcardDeck()"
+                  class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="sequential">По порядку</option>
+                  <option value="random">Випадкові (Рандом)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <label for="filter-box">Рівень:</label>
+                <select
+                  id="filter-box"
+                  onchange="prepareFlashcardDeck()"
+                  class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="all">Усі рівні</option>
+                  <option value="1">Рівень 1 (Нові)</option>
+                  <option value="2">Рівень 2</option>
+                  <option value="3">Рівень 3</option>
+                  <option value="4">Рівень 4</option>
+                  <option value="5">Рівень 5 (Вивчені)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="w-full max-w-md aspect-[4/3] perspective cursor-pointer"
+            onclick="flipCard()"
+          >
+            <div
+              id="flashcard"
+              class="card-inner w-full h-full relative rounded-2xl border border-slate-800 bg-slate-900/80 shadow-2xl p-6 flex flex-col justify-between text-center select-none"
+            >
+              <!-- FRONT -->
+              <div
+                class="card-front absolute inset-0 p-6 flex flex-col justify-between items-center bg-slate-900 rounded-2xl border border-slate-800"
+              >
+                <div
+                  class="w-full flex justify-between items-center text-slate-500 text-xs"
+                >
+                  <span
+                    id="card-box-tag"
+                    class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700"
+                    >Рівень 1</span
+                  >
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      speakCurrentWord();
+                    "
+                    class="p-2 hover:text-indigo-400 transition"
+                    title="Озвучити"
+                  >
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                  </button>
+                </div>
+
+                <div class="my-auto space-y-2">
+                  <div
+                    id="card-word-display"
+                    class="text-3xl sm:text-4xl font-bold tracking-wide"
+                  ></div>
+                  <div
+                    id="card-sub-display"
+                    class="text-sm text-slate-400 italic min-h-[20px]"
+                  ></div>
+                </div>
+
+                <div class="text-xs text-slate-500 flex items-center space-x-1">
+                  <i data-lucide="rotate-cw" class="w-3 h-3"></i>
+                  <span>Натисніть або Пробіл, щоб перевернути</span>
+                </div>
+              </div>
+
+              <!-- BACK -->
+              <div
+                class="card-back absolute inset-0 p-6 flex flex-col justify-between items-center bg-slate-900 rounded-2xl border border-indigo-900/50"
+              >
+                <div class="w-full flex justify-end text-slate-500 text-xs">
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      speakCurrentWord();
+                    "
+                    class="p-2 hover:text-indigo-400 transition"
+                    title="Озвучити"
+                  >
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                  </button>
+                </div>
+
+                <div class="my-auto space-y-3 w-full">
+                  <div
+                    id="card-translation-display"
+                    class="text-2xl font-bold text-emerald-400"
+                  ></div>
+                  <div
+                    id="card-verb-forms-display"
+                    class="text-xs text-indigo-300 bg-indigo-950/40 p-2 rounded-lg border border-indigo-900/50 hidden"
+                  ></div>
+                  <div
+                    id="card-example-display"
+                    class="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-lg border border-slate-800/80 italic"
+                  ></div>
+                </div>
+
+                <div class="text-xs text-slate-500">
+                  Оцініть свій результат нижче
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-4 w-full max-w-md">
+            <button
+              onclick="answerCard(false)"
+              class="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl font-medium transition flex items-center justify-center space-x-2"
+            >
+              <i data-lucide="x" class="w-5 h-5"></i>
+              <span>Не знаю (←)</span>
+            </button>
+            <button
+              onclick="answerCard(true)"
+              class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 py-3 rounded-xl font-medium transition flex items-center justify-center space-x-2"
+            >
+              <i data-lucide="check" class="w-5 h-5"></i>
+              <span>Знаю (→)</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- TAB: AI GENERATOR -->
+        <section
+          id="tab-ai-gen-content"
+          class="tab-content hidden flex-1 flex flex-col items-center justify-center space-y-6"
+        >
+          <div
+            class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl"
+          >
+            <div class="flex items-center space-x-3">
+              <div
+                class="bg-indigo-600/20 text-indigo-400 p-2.5 rounded-xl border border-indigo-500/30"
+              >
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold">Рандомайзер слів від ШІ</h2>
+                <p class="text-xs text-slate-400">
+                  Згенеруйте нові слова або дієслова вибраного рівня
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5"
+                  >Оберіть рівень складності</label
+                >
+                <div class="grid grid-cols-5 gap-2" id="ai-level-selector">
+                  <button
+                    onclick="selectAiLevel('A1')"
+                    class="ai-lvl-btn bg-indigo-600 border border-indigo-500 text-white font-semibold py-2 rounded-xl text-sm transition"
+                  >
+                    A1
+                  </button>
+                  <button
+                    onclick="selectAiLevel('A2')"
+                    class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition"
+                  >
+                    A2
+                  </button>
+                  <button
+                    onclick="selectAiLevel('B1')"
+                    class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition"
+                  >
+                    B1
+                  </button>
+                  <button
+                    onclick="selectAiLevel('B2')"
+                    class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition"
+                  >
+                    B2
+                  </button>
+                  <button
+                    onclick="selectAiLevel('C1')"
+                    class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition"
+                  >
+                    C1
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-1.5"
+                    >Кількість</label
+                  >
+                  <select
+                    id="ai-count"
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="3">3 слова</option>
+                    <option value="5" selected>5 слів</option>
+                    <option value="10">10 слів</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-400 mb-1.5"
+                    >Тематика / Тип</label
+                  >
+                  <input
+                    type="text"
+                    id="ai-topic"
+                    placeholder="напр. Дієслова, Подорожі..."
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                onclick="generateRandomWordsAI()"
+                id="ai-gen-btn"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition flex items-center justify-center space-x-2"
+              >
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Згенерувати через ШІ</span>
+              </button>
+            </div>
+
+            <div id="ai-loading" class="hidden text-center py-4 space-y-2">
+              <div
+                class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"
+              ></div>
+              <p class="text-xs text-indigo-400 font-medium">
+                ШІ підбирає слова та форми дієслів...
+              </p>
+            </div>
+
+            <div id="ai-results-container" class="hidden space-y-3 pt-2">
+              <h3
+                class="text-xs font-bold text-slate-400 uppercase tracking-wider"
+              >
+                Згенеровані елементи:
+              </h3>
+              <div
+                id="ai-words-list"
+                class="space-y-2 max-h-60 overflow-y-auto pr-1"
+              ></div>
+              <button
+                onclick="saveAllAiWords()"
+                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2"
+              >
+                <i data-lucide="check-check" class="w-4 h-4"></i>
+                <span>Додати всі у словник</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB: QUIZ -->
+        <section
+          id="tab-quiz-content"
+          class="tab-content hidden flex-1 flex flex-col items-center justify-center space-y-6"
+        >
+          <div
+            class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6"
+          >
+            <div
+              class="flex justify-between items-center text-xs text-slate-400"
+            >
+              <span>Перевірка знань</span>
+              <span id="quiz-score">Рахунок: 0</span>
+            </div>
+
+            <div class="text-center space-y-2 py-4">
+              <p class="text-xs text-slate-500 uppercase tracking-wider">
+                Перекладіть німецькою:
+              </p>
+              <h2
+                id="quiz-target-translation"
+                class="text-2xl font-bold text-white"
+              >
+                ...
+              </h2>
+            </div>
+
+            <form onsubmit="checkQuizAnswer(event)" class="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  id="quiz-input"
+                  placeholder="Введіть слово (напр. das Buch)"
+                  autocomplete="off"
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div class="flex justify-center space-x-2">
+                <button
+                  type="button"
+                  onclick="insertChar('ä')"
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium"
+                >
+                  ä
+                </button>
+                <button
+                  type="button"
+                  onclick="insertChar('ö')"
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium"
+                >
+                  ö
+                </button>
+                <button
+                  type="button"
+                  onclick="insertChar('ü')"
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium"
+                >
+                  ü
+                </button>
+                <button
+                  type="button"
+                  onclick="insertChar('ß')"
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium"
+                >
+                  ß
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition"
+              >
+                Перевірити
+              </button>
+            </form>
+
+            <div
+              id="quiz-feedback"
+              class="hidden text-center p-3 rounded-xl text-sm font-medium"
+            ></div>
+          </div>
+        </section>
+
+        <!-- TAB: MATCH PAIRS -->
+        <section
+          id="tab-match-content"
+          class="tab-content hidden flex-1 flex flex-col space-y-4"
+        >
+          <div class="flex justify-between items-center text-sm text-slate-400">
+            <span>Знайдіть відповідні пари</span>
+            <button
+              onclick="initMatchGame()"
+              class="text-indigo-400 hover:underline text-xs flex items-center space-x-1"
+            >
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Оновити картки</span>
+            </button>
+          </div>
+
+          <div
+            id="match-grid"
+            class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1"
+          ></div>
+        </section>
+
+        <!-- TAB: DICTIONARY -->
+        <section id="tab-dict-content" class="tab-content hidden space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3 justify-between">
+            <div class="relative flex-1">
+              <i
+                data-lucide="search"
+                class="w-4 h-4 absolute left-3 top-3 text-slate-500"
+              ></i>
+              <input
+                type="text"
+                id="dict-search"
+                oninput="renderDictionary()"
+                placeholder="Пошук слів або перекладу..."
+                class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                onclick="downloadUpdatedWordsJs()"
+                class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-xl transition font-medium"
+                title="Завантажити оновлений файл words.js"
+              >
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
+                <span>Завантажити words.js</span>
+              </button>
+
+              <button
+                onclick="exportWords()"
+                class="flex items-center space-x-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs px-3 py-2 rounded-xl transition"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span>Експорт JSON</span>
+              </button>
+
+              <label
+                class="flex items-center space-x-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs px-3 py-2 rounded-xl transition cursor-pointer"
+              >
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                <span>Імпорт</span>
+                <input
+                  type="file"
+                  id="import-file"
+                  onchange="importWords(event)"
+                  accept=".json"
+                  class="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div
+            class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead
+                  class="bg-slate-950/50 text-slate-400 border-b border-slate-800 text-xs uppercase"
+                >
+                  <tr>
+                    <th class="p-3">Слово / Форми</th>
+                    <th class="p-3">Переклад</th>
+                    <th class="p-3 hidden sm:table-cell">Приклад</th>
+                    <th class="p-3 text-center">Рівень</th>
+                    <th class="p-3 text-right">Дії</th>
+                  </tr>
+                </thead>
+                <tbody
+                  id="dict-table-body"
+                  class="divide-y divide-slate-800/50 text-slate-300"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around p-2 z-20"
+    >
+      <button
+        onclick="switchTab('cards')"
+        id="mob-nav-cards"
+        class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white"
+      >
         <i data-lucide="layers" class="w-5 h-5"></i>
-        <span>Картки</span>
+        <span class="text-[10px] mt-1">Картки</span>
       </button>
-      <button onclick="switchTab('ai-gen')" id="nav-ai-gen" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800">
+      <button
+        onclick="switchTab('ai-gen')"
+        id="mob-nav-ai-gen"
+        class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white"
+      >
         <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i>
-        <span>Генератор ШІ</span>
+        <span class="text-[10px] mt-1">ШІ Gen</span>
       </button>
-      <button onclick="switchTab('quiz')" id="nav-quiz" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800">
+      <button
+        onclick="switchTab('quiz')"
+        id="mob-nav-quiz"
+        class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white"
+      >
         <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-        <span>Тестування</span>
+        <span class="text-[10px] mt-1">Тест</span>
       </button>
-      <button onclick="switchTab('match')" id="nav-match" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800">
+      <button
+        onclick="switchTab('match')"
+        id="mob-nav-match"
+        class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white"
+      >
         <i data-lucide="gamepad-2" class="w-5 h-5"></i>
-        <span>З'єднай пари</span>
+        <span class="text-[10px] mt-1">Пари</span>
       </button>
-      <button onclick="switchTab('dict')" id="nav-dict" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-slate-400 hover:text-white hover:bg-slate-800">
+      <button
+        onclick="switchTab('dict')"
+        id="mob-nav-dict"
+        class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white"
+      >
         <i data-lucide="book-open" class="w-5 h-5"></i>
-        <span>Словник</span>
+        <span class="text-[10px] mt-1">Словник</span>
       </button>
     </nav>
 
-    <!-- Sync Indicator & Stats summary -->
-    <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
-      <div class="flex justify-between items-center text-xs">
-        <span class="text-slate-400">Синхронізація:</span>
-        <span id="sync-status-badge" class="font-medium text-slate-500">Локальна</span>
-      </div>
-      <div class="flex justify-between items-center text-xs">
-        <span class="text-slate-400">Всього слів:</span>
-        <span id="stat-total" class="font-bold text-white">0</span>
-      </div>
-      <div class="flex justify-between items-center text-xs">
-        <span class="text-slate-400">Вивчено (Рівень 5):</span>
-        <span id="stat-learned" class="font-bold text-emerald-400">0</span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- Main Workspace -->
-  <main class="flex-1 flex flex-col min-h-screen md:min-h-0 overflow-y-auto pb-20 md:pb-6">
-    <!-- Header bar -->
-    <header class="border-b border-slate-800 p-4 flex items-center justify-between bg-slate-900/50 backdrop-blur sticky top-0 z-10">
-      <div class="flex items-center space-x-3 md:hidden">
-        <div class="bg-indigo-600 p-1.5 rounded-lg">
-          <i data-lucide="languages" class="w-5 h-5 text-white"></i>
-        </div>
-        <span class="font-bold">DeutschLernen</span>
-      </div>
-      
-      <div id="tab-title" class="hidden md:block font-semibold text-slate-200">
-        Картки для вивчення
-      </div>
-
-      <div class="flex items-center space-x-2 ml-auto">
-        <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-lg transition" title="Налаштування API та Хмари">
-          <i data-lucide="settings" class="w-4 h-4"></i>
-        </button>
-        <button onclick="openAddModal()" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium">
-          <i data-lucide="plus" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Додати слово</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- Tab Content Area -->
-    <div class="p-4 sm:p-6 max-w-4xl w-full mx-auto flex-1 flex flex-col">
-
-      <!-- TAB: FLASHCARDS -->
-      <section id="tab-cards-content" class="tab-content flex-1 flex flex-col items-center justify-center space-y-6">
-        <!-- Фільтри карток для вивчення -->
-        <div class="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-slate-400 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
-          <span id="card-counter" class="font-medium text-slate-300">Слово 0 з 0</span>
-          
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center space-x-1">
-              <label for="filter-mode">Режим:</label>
-              <select id="filter-mode" onchange="renderFlashcard()" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500">
-                <option value="sequential">По порядку</option>
-                <option value="random">Випадкові (Рандом)</option>
-              </select>
-            </div>
-
-            <div class="flex items-center space-x-1">
-              <label for="filter-box">Рівень:</label>
-              <select id="filter-box" onchange="renderFlashcard()" class="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500">
-                <option value="all">Усі рівні</option>
-                <option value="1">Рівень 1 (Нові)</option>
-                <option value="2">Рівень 2</option>
-                <option value="3">Рівень 3</option>
-                <option value="4">Рівень 4</option>
-                <option value="5">Рівень 5 (Вивчені)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="w-full max-w-md aspect-[4/3] perspective cursor-pointer" onclick="flipCard()">
-          <div id="flashcard" class="card-inner w-full h-full relative rounded-2xl border border-slate-800 bg-slate-900/80 shadow-2xl p-6 flex flex-col justify-between text-center select-none">
-            
-            <!-- FRONT -->
-            <div class="card-front absolute inset-0 p-6 flex flex-col justify-between items-center bg-slate-900 rounded-2xl border border-slate-800">
-              <div class="w-full flex justify-between items-center text-slate-500 text-xs">
-                <span id="card-box-tag" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Рівень 1</span>
-                <button onclick="event.stopPropagation(); speakCurrentWord()" class="p-2 hover:text-indigo-400 transition" title="Озвучити">
-                  <i data-lucide="volume-2" class="w-5 h-5"></i>
-                </button>
-              </div>
-
-              <div class="my-auto space-y-2">
-                <div id="card-word-display" class="text-3xl sm:text-4xl font-bold tracking-wide"></div>
-                <div id="card-sub-display" class="text-sm text-slate-400 italic min-h-[20px]"></div>
-              </div>
-
-              <div class="text-xs text-slate-500 flex items-center space-x-1">
-                <i data-lucide="rotate-cw" class="w-3 h-3"></i>
-                <span>Натисніть або Пробіл, щоб перевернути</span>
-              </div>
-            </div>
-
-            <!-- BACK -->
-            <div class="card-back absolute inset-0 p-6 flex flex-col justify-between items-center bg-slate-900 rounded-2xl border border-indigo-900/50">
-              <div class="w-full flex justify-end text-slate-500 text-xs">
-                <button onclick="event.stopPropagation(); speakCurrentWord()" class="p-2 hover:text-indigo-400 transition" title="Озвучити">
-                  <i data-lucide="volume-2" class="w-5 h-5"></i>
-                </button>
-              </div>
-
-              <div class="my-auto space-y-3 w-full">
-                <div id="card-translation-display" class="text-2xl font-bold text-emerald-400"></div>
-                <div id="card-verb-forms-display" class="text-xs text-indigo-300 bg-indigo-950/40 p-2 rounded-lg border border-indigo-900/50 hidden"></div>
-                <div id="card-example-display" class="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-lg border border-slate-800/80 italic"></div>
-              </div>
-
-              <div class="text-xs text-slate-500">Оцініть свій результат нижче</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex items-center space-x-4 w-full max-w-md">
-          <button onclick="answerCard(false)" class="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-3 rounded-xl font-medium transition flex items-center justify-center space-x-2">
+    <!-- Add/Edit Word Modal -->
+    <div
+      id="word-modal"
+      class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center">
+          <h3 id="modal-title" class="text-lg font-bold">Додати нове слово</h3>
+          <button
+            onclick="closeAddModal()"
+            class="text-slate-500 hover:text-white"
+          >
             <i data-lucide="x" class="w-5 h-5"></i>
-            <span>Не знаю (←)</span>
-          </button>
-          <button onclick="answerCard(true)" class="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 py-3 rounded-xl font-medium transition flex items-center justify-center space-x-2">
-            <i data-lucide="check" class="w-5 h-5"></i>
-            <span>Знаю (→)</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- TAB: AI GENERATOR -->
-      <section id="tab-ai-gen-content" class="tab-content hidden flex-1 flex flex-col items-center justify-center space-y-6">
-        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
-          <div class="flex items-center space-x-3">
-            <div class="bg-indigo-600/20 text-indigo-400 p-2.5 rounded-xl border border-indigo-500/30">
-              <i data-lucide="sparkles" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold">Рандомайзер слів від ШІ</h2>
-              <p class="text-xs text-slate-400">Згенеруйте нові слова або дієслова вибраного рівня</p>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-400 mb-1.5">Оберіть рівень складності</label>
-              <div class="grid grid-cols-5 gap-2" id="ai-level-selector">
-                <button onclick="selectAiLevel('A1')" class="ai-lvl-btn bg-indigo-600 border border-indigo-500 text-white font-semibold py-2 rounded-xl text-sm transition">A1</button>
-                <button onclick="selectAiLevel('A2')" class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition">A2</button>
-                <button onclick="selectAiLevel('B1')" class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition">B1</button>
-                <button onclick="selectAiLevel('B2')" class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition">B2</button>
-                <button onclick="selectAiLevel('C1')" class="ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition">C1</button>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Кількість</label>
-                <select id="ai-count" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-                  <option value="3">3 слова</option>
-                  <option value="5" selected>5 слів</option>
-                  <option value="10">10 слів</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1.5">Тематика / Тип</label>
-                <input type="text" id="ai-topic" placeholder="напр. Дієслова, Подорожі..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-              </div>
-            </div>
-
-            <button onclick="generateRandomWordsAI()" id="ai-gen-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition flex items-center justify-center space-x-2">
-              <i data-lucide="sparkles" class="w-4 h-4"></i>
-              <span>Згенерувати через ШІ</span>
-            </button>
-          </div>
-
-          <div id="ai-loading" class="hidden text-center py-4 space-y-2">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent"></div>
-            <p class="text-xs text-indigo-400 font-medium">ШІ підбирає слова та форми дієслів...</p>
-          </div>
-
-          <div id="ai-results-container" class="hidden space-y-3 pt-2">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Згенеровані елементи:</h3>
-            <div id="ai-words-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-            <button onclick="saveAllAiWords()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
-              <i data-lucide="check-check" class="w-4 h-4"></i>
-              <span>Додати всі у словник</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- TAB: QUIZ -->
-      <section id="tab-quiz-content" class="tab-content hidden flex-1 flex flex-col items-center justify-center space-y-6">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <div class="flex justify-between items-center text-xs text-slate-400">
-            <span>Перевірка знань</span>
-            <span id="quiz-score">Рахунок: 0</span>
-          </div>
-
-          <div class="text-center space-y-2 py-4">
-            <p class="text-xs text-slate-500 uppercase tracking-wider">Перекладіть німецькою:</p>
-            <h2 id="quiz-target-translation" class="text-2xl font-bold text-white">...</h2>
-          </div>
-
-          <form onsubmit="checkQuizAnswer(event)" class="space-y-4">
-            <div>
-              <input type="text" id="quiz-input" placeholder="Введіть слово (напр. das Buch)" autocomplete="off" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
-            </div>
-
-            <div class="flex justify-center space-x-2">
-              <button type="button" onclick="insertChar('ä')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium">ä</button>
-              <button type="button" onclick="insertChar('ö')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium">ö</button>
-              <button type="button" onclick="insertChar('ü')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium">ü</button>
-              <button type="button" onclick="insertChar('ß')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1 rounded text-sm font-medium">ß</button>
-            </div>
-
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition">
-              Перевірити
-            </button>
-          </form>
-
-          <div id="quiz-feedback" class="hidden text-center p-3 rounded-xl text-sm font-medium"></div>
-        </div>
-      </section>
-
-      <!-- TAB: MATCH PAIRS -->
-      <section id="tab-match-content" class="tab-content hidden flex-1 flex flex-col space-y-4">
-        <div class="flex justify-between items-center text-sm text-slate-400">
-          <span>Знайдіть відповідні пари</span>
-          <button onclick="initMatchGame()" class="text-indigo-400 hover:underline text-xs flex items-center space-x-1">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-            <span>Оновити картки</span>
           </button>
         </div>
 
-        <div id="match-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1"></div>
-      </section>
+        <form onsubmit="saveWord(event)" class="space-y-3">
+          <input type="hidden" id="modal-word-id" />
 
-      <!-- TAB: DICTIONARY -->
-      <section id="tab-dict-content" class="tab-content hidden space-y-4">
-        <div class="flex flex-col sm:flex-row gap-3 justify-between">
-          <div class="relative flex-1">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
-            <input type="text" id="dict-search" oninput="renderDictionary()" placeholder="Пошук слів або перекладу..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          
-          <div class="flex flex-wrap gap-2">
-            <button onclick="downloadUpdatedWordsJs()" class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-xl transition font-medium" title="Завантажити оновлений файл words.js">
-              <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
-              <span>Завантажити words.js</span>
-            </button>
-
-            <button onclick="exportWords()" class="flex items-center space-x-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs px-3 py-2 rounded-xl transition">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>Експорт JSON</span>
-            </button>
-
-            <label class="flex items-center space-x-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs px-3 py-2 rounded-xl transition cursor-pointer">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-              <span>Імпорт</span>
-              <input type="file" id="import-file" onchange="importWords(event)" accept=".json" class="hidden">
-            </label>
-          </div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-950/50 text-slate-400 border-b border-slate-800 text-xs uppercase">
-                <tr>
-                  <th class="p-3">Слово / Форми</th>
-                  <th class="p-3">Переклад</th>
-                  <th class="p-3 hidden sm:table-cell">Приклад</th>
-                  <th class="p-3 text-center">Рівень</th>
-                  <th class="p-3 text-right">Дії</th>
-                </tr>
-              </thead>
-              <tbody id="dict-table-body" class="divide-y divide-slate-800/50 text-slate-300"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-    </div>
-  </main>
-
-  <!-- Mobile Bottom Navigation Bar -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 flex justify-around p-2 z-20">
-    <button onclick="switchTab('cards')" id="mob-nav-cards" class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white">
-      <i data-lucide="layers" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1">Картки</span>
-    </button>
-    <button onclick="switchTab('ai-gen')" id="mob-nav-ai-gen" class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white">
-      <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i>
-      <span class="text-[10px] mt-1">ШІ Gen</span>
-    </button>
-    <button onclick="switchTab('quiz')" id="mob-nav-quiz" class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white">
-      <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1">Тест</span>
-    </button>
-    <button onclick="switchTab('match')" id="mob-nav-match" class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white">
-      <i data-lucide="gamepad-2" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1">Пари</span>
-    </button>
-    <button onclick="switchTab('dict')" id="mob-nav-dict" class="mob-nav-btn flex flex-col items-center p-2 text-slate-400 hover:text-white">
-      <i data-lucide="book-open" class="w-5 h-5"></i>
-      <span class="text-[10px] mt-1">Словник</span>
-    </button>
-  </nav>
-
-  <!-- Add/Edit Word Modal (Extended with verb forms) -->
-  <div id="word-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center">
-        <h3 id="modal-title" class="text-lg font-bold">Додати нове слово</h3>
-        <button onclick="closeAddModal()" class="text-slate-500 hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form onsubmit="saveWord(event)" class="space-y-3">
-        <input type="hidden" id="modal-word-id">
-        
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">Артикль</label>
-            <select id="modal-article" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-              <option value="none">—</option>
-              <option value="der">der</option>
-              <option value="die">die</option>
-              <option value="das">das</option>
-            </select>
-          </div>
-          <div class="col-span-2">
-            <div class="flex justify-between items-center mb-1">
-              <label class="block text-xs text-slate-400">Слово / Дієслово *</label>
-              <button type="button" onclick="autoFillWordWithAI()" class="text-[11px] text-indigo-400 hover:underline flex items-center space-x-1">
-                <i data-lucide="sparkles" class="w-3 h-3"></i>
-                <span>Заповнити з ШІ</span>
-              </button>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Артикль</label>
+              <select
+                id="modal-article"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+              >
+                <option value="none">—</option>
+                <option value="der">der</option>
+                <option value="die">die</option>
+                <option value="das">das</option>
+              </select>
             </div>
-            <input type="text" id="modal-word" required placeholder="напр. sprechen" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <div class="col-span-2">
+              <div class="flex justify-between items-center mb-1">
+                <label class="block text-xs text-slate-400"
+                  >Слово / Дієслово *</label
+                >
+                <button
+                  type="button"
+                  onclick="autoFillWordWithAI()"
+                  class="text-[11px] text-indigo-400 hover:underline flex items-center space-x-1"
+                >
+                  <i data-lucide="sparkles" class="w-3 h-3"></i>
+                  <span>Заповнити з ШІ</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                id="modal-word"
+                required
+                placeholder="напр. sprechen"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Форма множини (для іменників Plural)</label>
-          <input type="text" id="modal-plural" placeholder="напр. die Tische" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] text-slate-400 mb-1">Präsens (3 особа)</label>
-            <input type="text" id="modal-presents" placeholder="напр. spricht" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <label class="block text-xs text-slate-400 mb-1"
+              >Форма множини (для іменників Plural)</label
+            >
+            <input
+              type="text"
+              id="modal-plural"
+              placeholder="напр. die Tische"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            />
           </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1"
+                >Präsens (3 особа)</label
+              >
+              <input
+                type="text"
+                id="modal-presents"
+                placeholder="напр. spricht"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1"
+                >Präteritum</label
+              >
+              <input
+                type="text"
+                id="modal-preteritum"
+                placeholder="напр. sprach"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
           <div>
-            <label class="block text-[11px] text-slate-400 mb-1">Präteritum</label>
-            <input type="text" id="modal-preteritum" placeholder="напр. sprach" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <label class="block text-[11px] text-slate-400 mb-1"
+              >Perfekt (повна форма)</label
+            >
+            <input
+              type="text"
+              id="modal-perfekt"
+              placeholder="напр. hat gesprochen"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1"
+              >Український переклад *</label
+            >
+            <input
+              type="text"
+              id="modal-translation"
+              required
+              placeholder="напр. говорити"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-400 mb-1"
+              >Приклад використання</label
+            >
+            <input
+              type="text"
+              id="modal-example"
+              placeholder="напр. Er spricht gut Deutsch."
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div class="flex justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              onclick="closeAddModal()"
+              class="px-4 py-2 text-sm text-slate-400 hover:text-white transition"
+            >
+              Скасувати
+            </button>
+            <button
+              type="submit"
+              class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+            >
+              Зберегти
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Unified Settings Modal -->
+    <div
+      id="settings-modal"
+      class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold flex items-center space-x-2">
+            <i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i>
+            <span>Налаштування додатку</span>
+          </h3>
+          <button
+            onclick="closeSettingsModal()"
+            class="text-slate-500 hover:text-white"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-2 border-b border-slate-800 pb-4">
+          <label
+            class="block text-xs font-bold text-slate-300 uppercase tracking-wider"
+            >1. Google Gemini API Key</label
+          >
+          <input
+            type="password"
+            id="api-key-input"
+            placeholder="AIzaSy..."
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+          />
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            class="inline-block text-xs text-indigo-400 hover:underline"
+            >Отримати ключ Gemini ↗</a
+          >
+        </div>
+
+        <div class="space-y-3">
+          <label
+            class="block text-xs font-bold text-slate-300 uppercase tracking-wider"
+            >2. Google Firebase Realtime DB URL</label
+          >
+          <input
+            type="text"
+            id="fb-db-url"
+            placeholder="https://your-project-default-rtdb.firebaseio.com"
+            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+          />
+
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1"
+              >Firebase Config JSON (опціонально)</label
+            >
+            <textarea
+              id="fb-config-json"
+              rows="3"
+              placeholder='{"apiKey": "...", "databaseURL": "..."}'
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"
+            ></textarea>
           </div>
         </div>
 
-        <div>
-          <label class="block text-[11px] text-slate-400 mb-1">Perfekt (повна форма)</label>
-          <input type="text" id="modal-perfekt" placeholder="напр. hat gesprochen" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+        <div class="flex justify-end pt-2">
+          <button
+            onclick="saveSettings()"
+            class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition"
+          >
+            Зберегти всі налаштування
+          </button>
         </div>
-
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Український переклад *</label>
-          <input type="text" id="modal-translation" required placeholder="напр. говорити" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs text-slate-400 mb-1">Приклад використання</label>
-          <input type="text" id="modal-example" placeholder="напр. Er spricht gut Deutsch." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div class="flex justify-end space-x-3 pt-2">
-          <button type="button" onclick="closeAddModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-white transition">Скасувати</button>
-          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition">Зберегти</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Unified Settings Modal -->
-  <div id="settings-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center">
-        <h3 class="text-lg font-bold flex items-center space-x-2">
-          <i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i>
-          <span>Налаштування додатку</span>
-        </h3>
-        <button onclick="closeSettingsModal()" class="text-slate-500 hover:text-white">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="space-y-2 border-b border-slate-800 pb-4">
-        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">1. Google Gemini API Key</label>
-        <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="inline-block text-xs text-indigo-400 hover:underline">Отримати ключ Gemini ↗</a>
-      </div>
-
-      <div class="space-y-3">
-        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">2. Google Firebase Realtime DB URL</label>
-        <input type="text" id="fb-db-url" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-        
-        <div>
-          <label class="block text-[11px] text-slate-400 mb-1">Firebase Config JSON (опціонально)</label>
-          <textarea id="fb-config-json" rows="3" placeholder='{"apiKey": "...", "databaseURL": "..."}' class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"></textarea>
-        </div>
-      </div>
-
-      <div class="flex justify-end pt-2">
-        <button onclick="saveSettings()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
-          Зберегти всі налаштування
-        </button>
       </div>
     </div>
-  </div>
 
-  <script src="words.js"></script>
-  <script src="app.js"></script>
-</body>
+    <script src="words.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>

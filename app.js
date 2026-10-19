@@ -202,7 +202,7 @@ async function callGeminiAPI(prompt) {
     return null;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey.trim()}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
 
   try {
     const response = await fetch(url, {
@@ -228,7 +228,7 @@ async function callGeminiAPI(prompt) {
 function selectAiLevel(level) {
   selectedAiLevel = level;
   document.querySelectorAll('.ai-lvl-btn').forEach(btn => {
-    if (btn.textContent === level) {
+    if (btn.textContent.trim() === level) {
       btn.className = 'ai-lvl-btn bg-indigo-600 border border-indigo-500 text-white font-semibold py-2 rounded-xl text-sm transition';
     } else {
       btn.className = 'ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition';
@@ -357,7 +357,7 @@ function prepareFlashcardDeck() {
 
   let filtered = words;
   if (boxFilter !== 'all') {
-    const targetBox = parseInt(boxFilter);
+    const targetBox = parseInt(boxFilter, 10);
     filtered = words.filter(w => (w.box || 1) === targetBox);
   }
 
