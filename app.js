@@ -228,7 +228,7 @@ async function callGeminiAPI(prompt) {
 function selectAiLevel(level) {
   selectedAiLevel = level;
   document.querySelectorAll('.ai-lvl-btn').forEach(btn => {
-    if (btn.textContent.trim() === level) {
+    if (btn.textContent.trim().toUpperCase() === level.toUpperCase()) {
       btn.className = 'ai-lvl-btn bg-indigo-600 border border-indigo-500 text-white font-semibold py-2 rounded-xl text-sm transition';
     } else {
       btn.className = 'ai-lvl-btn bg-slate-950 border border-slate-800 text-slate-400 hover:text-white py-2 rounded-xl text-sm transition';
@@ -418,7 +418,6 @@ function renderFlashcard() {
     verbBox.classList.add('hidden');
   }
 
-  // Оформлення прикладу та його українського перекладу
   const exampleText = word.example ? `"${word.example}"` : 'Приклад відсутній';
   const exampleTransText = word.exampleTranslation ? `(${word.exampleTranslation})` : '';
 
@@ -599,7 +598,6 @@ function renderDictionary() {
     let subDetails = w.plural ? `Pl.: ${w.plural}` : '';
     if (w.presents) subDetails = `${w.presents} • ${w.preteritum} • ${w.perfekt}`;
 
-    // Відображення німецького прикладу + українського перекладу під ним у словнику
     const exampleBlock = w.example 
       ? `<div>${w.example}</div>${w.exampleTranslation ? `<div class="text-[11px] text-slate-500 not-italic mt-0.5">${w.exampleTranslation}</div>` : ''}`
       : '—';
