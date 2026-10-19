@@ -202,7 +202,7 @@ async function callGeminiAPI(prompt) {
     return null;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey.trim()}`;
 
   try {
     const response = await fetch(url, {
@@ -261,7 +261,8 @@ async function generateRandomWordsAI() {
     "preteritum": "форма Präteritum (для дієслів, напр. sprach) або порожньо",
     "perfekt": "форма Perfekt (для дієслів, напр. hat gesprochen) або порожньо",
     "translation": "переклад українською",
-    "example": "речення-приклад німецькою"
+    "example": "речення-приклад німецькою",
+    "exampleTranslation": "переклад речення-прикладу українською"
   }
 ]`;
 
@@ -290,6 +291,8 @@ function renderAiResultsList() {
         <div class="font-bold text-white text-sm">${artText}${w.word}</div>
         ${verbInfo}
         <div class="text-slate-300">${w.translation}</div>
+        ${w.example ? `<div class="text-[11px] text-slate-400 italic mt-1">"${w.example}"</div>` : ''}
+        ${w.exampleTranslation ? `<div class="text-[11px] text-slate-500 font-normal">${w.exampleTranslation}</div>` : ''}
       </div>
     `;
     listEl.appendChild(item);
@@ -309,6 +312,7 @@ function saveAllAiWords() {
       perfekt: w.perfekt || '',
       translation: w.translation,
       example: w.example || '',
+      exampleTranslation: w.exampleTranslation || '',
       box: 1
     });
   });
@@ -332,7 +336,8 @@ async function autoFillWordWithAI() {
   "preteritum": "Präteritum або порожньо",
   "perfekt": "Perfekt або порожньо",
   "translation": "переклад українською",
-  "example": "приклад речення"
+  "example": "приклад речення німецькою",
+  "exampleTranslation": "переклад прикладу українською"
 }`;
 
   const res = await callGeminiAPI(prompt);
@@ -345,11 +350,12 @@ async function autoFillWordWithAI() {
     if (res.perfekt) document.getElementById('modal-perfekt').value = res.perfekt;
     if (res.translation) document.getElementById('modal-translation').value = res.translation;
     if (res.example) document.getElementById('modal-example').value = res.example;
+    if (res.exampleTranslation) document.getElementById('modal-example-translation').value = res.exampleTranslation;
   }
 }
 
 // ----------------------------------------------------
-// TAB 1: FLASHCARDS (З вибором режиму та рівнів)
+// TAB 1: FLASHCARDS
 // ----------------------------------------------------
 function prepareFlashcardDeck() {
   const boxFilter = document.getElementById('filter-box')?.value || 'all';
@@ -394,7 +400,6 @@ function renderFlashcard() {
   const artText = word.article && word.article !== 'none' ? `<span class="article-${word.article}">${word.article}</span> ` : '';
   document.getElementById('card-word-display').innerHTML = `${artText}${word.word}`;
 
-  // Підзаголовок (plural або коротка інфо)
   if (word.plural) {
     document.getElementById('card-sub-display').textContent = `Pl.: ${word.plural}`;
   } else if (word.presents) {
@@ -405,7 +410,6 @@ function renderFlashcard() {
 
   document.getElementById('card-translation-display').textContent = word.translation;
   
-  // Додаткові форми дієслова на звороті
   const verbBox = document.getElementById('card-verb-forms-display');
   if (word.presents || word.preteritum || word.perfekt) {
     verbBox.textContent = `Форми: ${word.presents || '—'} | ${word.preteritum || '—'} | ${word.perfekt || '—'}`;
@@ -414,7 +418,14 @@ function renderFlashcard() {
     verbBox.classList.add('hidden');
   }
 
-  document.getElementById('card-example-display').textContent = word.example ? `"${word.example}"` : 'Приклад відсутній';
+  // Оформлення прикладу та його українського перекладу
+  const exampleText = word.example ? `"${word.example}"` : 'Приклад відсутній';
+  const exampleTransText = word.exampleTranslation ? `(${word.exampleTranslation})` : '';
+
+  document.getElementById('card-example-display').innerHTML = `
+    <div class="italic text-slate-200">${exampleText}</div>
+    ${word.exampleTranslation ? `<div class="text-xs text-slate-400 mt-1.5 font-normal">${exampleTransText}</div>` : ''}
+  `;
 }
 
 function flipCard() {
@@ -428,21 +439,19 @@ function answerCard(success) {
   if (list.length === 0) return;
 
   const currentCard = list[currentCardIndex];
-  // Знаходимо оригінальне слово в основному масиві за id
   const originalWord = words.find(w => w.id === currentCard.id);
 
   if (originalWord) {
     if (success) {
       originalWord.box = Math.min(5, (originalWord.box || 1) + 1);
     } else {
-      originalWord.box = 1; // Повертаємо на початковий рівень для повторення
+      originalWord.box = 1;
     }
     saveWords();
   }
 
   currentCardIndex++;
   if (currentCardIndex >= list.length) {
-    // Якщо дійшли до кінця колоди, оновлюємо її знову
     prepareFlashcardDeck();
   } else {
     renderFlashcard();
@@ -531,7 +540,7 @@ function initMatchGame() {
   });
 
   cardsData.sort(() => 0.5 - Math.random());
-  cardsData.forEach((c, idx) => {
+  cardsData.forEach((c) => {
     const btn = document.createElement('button');
     btn.className = 'match-card bg-slate-900 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-4 text-sm font-medium transition flex items-center justify-center text-center min-h-[90px]';
     btn.dataset.id = c.id;
@@ -590,10 +599,15 @@ function renderDictionary() {
     let subDetails = w.plural ? `Pl.: ${w.plural}` : '';
     if (w.presents) subDetails = `${w.presents} • ${w.preteritum} • ${w.perfekt}`;
 
+    // Відображення німецького прикладу + українського перекладу під ним у словнику
+    const exampleBlock = w.example 
+      ? `<div>${w.example}</div>${w.exampleTranslation ? `<div class="text-[11px] text-slate-500 not-italic mt-0.5">${w.exampleTranslation}</div>` : ''}`
+      : '—';
+
     tr.innerHTML = `
       <td class="p-3 font-medium">${artText}${w.word} <span class="text-[11px] text-slate-400 block">${subDetails}</span></td>
       <td class="p-3 text-slate-300">${w.translation}</td>
-      <td class="p-3 text-slate-400 italic hidden sm:table-cell text-xs">${w.example || '—'}</td>
+      <td class="p-3 text-slate-400 italic hidden sm:table-cell text-xs">${exampleBlock}</td>
       <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 border border-slate-700">${w.box || 1}</span></td>
       <td class="p-3 text-right space-x-1">
         <button onclick="editWord(${w.id})" class="p-1.5 text-slate-400 hover:text-white transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
@@ -620,6 +634,7 @@ function openAddModal(editId = null) {
       document.getElementById('modal-perfekt').value = w.perfekt || '';
       document.getElementById('modal-translation').value = w.translation;
       document.getElementById('modal-example').value = w.example || '';
+      document.getElementById('modal-example-translation').value = w.exampleTranslation || '';
     }
   } else {
     document.getElementById('modal-title').textContent = 'Додати нове слово / дієслово';
@@ -632,6 +647,7 @@ function openAddModal(editId = null) {
     document.getElementById('modal-perfekt').value = '';
     document.getElementById('modal-translation').value = '';
     document.getElementById('modal-example').value = '';
+    document.getElementById('modal-example-translation').value = '';
   }
 }
 
@@ -650,6 +666,7 @@ function saveWord(e) {
     perfekt: document.getElementById('modal-perfekt').value.trim(),
     translation: document.getElementById('modal-translation').value.trim(),
     example: document.getElementById('modal-example').value.trim(),
+    exampleTranslation: document.getElementById('modal-example-translation').value.trim(),
     box: 1
   };
 
