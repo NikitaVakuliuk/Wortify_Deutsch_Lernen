@@ -1,0 +1,58 @@
+/* 3D Card Flip Animation Styles */
+.perspective {
+  perspective: 1000px;
+}
+
+.card-inner {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Article Visual Styling */
+.article-der {
+  color: #60a5fa; /* Blue */
+}
+
+.article-die {
+  color: #f87171; /* Red */
+}
+
+.article-das {
+  color: #4ade80; /* Green */
+}
+
+.article-none {
+  color: #a78bfa; /* Purple for verbs/adjectives */
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
