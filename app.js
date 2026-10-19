@@ -12,8 +12,13 @@ let selectedAiLevel = 'A1';
 let generatedAiWords = [];
 let apiKey = localStorage.getItem('dl_gemini_key') || '';
 
+// Firebase State
+let firebaseDb = null;
+let isFirebaseConnected = false;
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
+  initFirebase();
   loadWords();
   initLucide();
   switchTab('cards');
@@ -26,7 +31,71 @@ function initLucide() {
   }
 }
 
-// Storage Management (Merge defaultWords with localStorage)
+// ----------------------------------------------------
+// FIREBASE SYNCHRONIZATION
+// ----------------------------------------------------
+function initFirebase() {
+  const dbUrl = localStorage.getItem('dl_fb_db_url') || '';
+  const configRaw = localStorage.getItem('dl_fb_config') || '';
+
+  if (!dbUrl && !configRaw) {
+    updateSyncBadge(false);
+    return;
+  }
+
+  try {
+    let config = {};
+    if (configRaw) {
+      try {
+        config = JSON.parse(configRaw);
+      } catch (e) {
+        console.warn('Невірний JSON у конфігу Firebase, використовуємо прямий databaseURL.');
+      }
+    }
+
+    if (!config.databaseURL && dbUrl) {
+      config.databaseURL = dbUrl;
+    }
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(config);
+    }
+
+    firebaseDb = firebase.database();
+    isFirebaseConnected = true;
+    updateSyncBadge(true);
+
+    // Слухач оновлень у реальному часі
+    firebaseDb.ref('words').on('value', (snapshot) => {
+      const remoteData = snapshot.val();
+      if (remoteData) {
+        let remoteArray = Array.isArray(remoteData) ? remoteData : Object.values(remoteData);
+        mergeAndApplyWords(remoteArray);
+      }
+    });
+
+  } catch (err) {
+    console.error('Помилка ініціалізації Firebase:', err);
+    updateSyncBadge(false);
+  }
+}
+
+function updateSyncBadge(connected) {
+  const badge = document.getElementById('sync-status-badge');
+  if (!badge) return;
+  
+  if (connected) {
+    badge.textContent = 'Хмарна (Firebase)';
+    badge.className = 'font-medium text-emerald-400';
+  } else {
+    badge.textContent = 'Локальна (localStorage)';
+    badge.className = 'font-medium text-slate-500';
+  }
+}
+
+// ----------------------------------------------------
+// STORAGE & DATA MERGING
+// ----------------------------------------------------
 function loadWords() {
   const saved = localStorage.getItem('dl_words');
   let localWords = [];
@@ -40,7 +109,10 @@ function loadWords() {
     }
   }
 
-  // Об'єднуємо дефолтні слова з words.js та слова з localStorage без дублікатів
+  mergeAndApplyWords(localWords);
+}
+
+function mergeAndApplyWords(newWordsArray) {
   const mergedMap = new Map();
 
   // 1. Спочатку додаємо дефолтні з words.js
@@ -50,18 +122,39 @@ function loadWords() {
     });
   }
 
-  // 2. Потім накладаємо збережені користувачем (вони зберігають прогрес box та нові слова)
-  localWords.forEach(w => {
+  // 2. Спочатку поточні
+  words.forEach(w => {
     if (w && w.word) mergedMap.set(w.word.toLowerCase(), w);
   });
 
+  // 3. Накладаємо нові отримані слова (вони перезаписують прогрес та додають нові)
+  if (Array.isArray(newWordsArray)) {
+    newWordsArray.forEach(w => {
+      if (w && w.word) mergedMap.set(w.word.toLowerCase(), w);
+    });
+  }
+
   words = Array.from(mergedMap.values());
-  saveWords();
+  
+  // Зберігаємо в localStorage
+  localStorage.setItem('dl_words', JSON.stringify(words));
+  updateStats();
+
+  if (currentTab === 'dict') renderDictionary();
+  if (currentTab === 'cards') renderFlashcard();
 }
 
 function saveWords() {
+  // Збереження у локальне сховище
   localStorage.setItem('dl_words', JSON.stringify(words));
   updateStats();
+
+  // Збереження у хмару Firebase, якщо вона підключена
+  if (isFirebaseConnected && firebaseDb) {
+    firebaseDb.ref('words').set(words).catch(err => {
+      console.error('Помилка збереження у Firebase:', err);
+    });
+  }
 }
 
 function updateStats() {
@@ -69,7 +162,9 @@ function updateStats() {
   document.getElementById('stat-learned').textContent = words.filter(w => w.box === 5).length;
 }
 
-// Navigation Handler
+// ----------------------------------------------------
+// NAVIGATION HANDLER
+// ----------------------------------------------------
 function switchTab(tab) {
   currentTab = tab;
   
@@ -110,25 +205,37 @@ function switchTab(tab) {
 }
 
 // ----------------------------------------------------
-// AI INTEGRATION (GEMINI API)
+// SETTINGS MANAGEMENT
 // ----------------------------------------------------
 function openSettingsModal() {
   document.getElementById('settings-modal').classList.remove('hidden');
   document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('fb-db-url').value = localStorage.getItem('dl_fb_db_url') || '';
+  document.getElementById('fb-config-json').value = localStorage.getItem('dl_fb_config') || '';
 }
 
 function closeSettingsModal() {
   document.getElementById('settings-modal').classList.add('hidden');
 }
 
-function saveApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  apiKey = val;
+function saveSettings() {
+  const keyVal = document.getElementById('api-key-input').value.trim();
+  const dbUrlVal = document.getElementById('fb-db-url').value.trim();
+  const configJsonVal = document.getElementById('fb-config-json').value.trim();
+
+  apiKey = keyVal;
   localStorage.setItem('dl_gemini_key', apiKey);
+  localStorage.setItem('dl_fb_db_url', dbUrlVal);
+  localStorage.setItem('dl_fb_config', configJsonVal);
+
   closeSettingsModal();
-  alert('API-ключ збережено!');
+  initFirebase();
+  alert('Налаштування успішно збережено!');
 }
 
+// ----------------------------------------------------
+// AI INTEGRATION (GEMINI API)
+// ----------------------------------------------------
 async function callGeminiAPI(prompt) {
   if (!apiKey) {
     openSettingsModal();
@@ -136,7 +243,6 @@ async function callGeminiAPI(prompt) {
     return null;
   }
 
-  // Використовуємо актуальну модель за рекомендацією Google API
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey.trim()}`;
 
   try {
@@ -173,7 +279,6 @@ async function callGeminiAPI(prompt) {
   }
 }
 
-// AI Level Selector
 function selectAiLevel(level) {
   selectedAiLevel = level;
   document.querySelectorAll('.ai-lvl-btn').forEach(btn => {
@@ -185,7 +290,6 @@ function selectAiLevel(level) {
   });
 }
 
-// AI Word Randomizer Generator
 async function generateRandomWordsAI() {
   const count = document.getElementById('ai-count').value;
   const topic = document.getElementById('ai-topic').value.trim();
@@ -199,8 +303,9 @@ async function generateRandomWordsAI() {
   genBtn.disabled = true;
 
   const topicText = topic ? `на тему "${topic}"` : '';
-  // Беремо лише останні 40 доданих слів, щоб не роздувати промпт
-const existingWords = words.slice(-40).map(w => w.word).join(', ');
+  
+  // Оптимізація: беремо останні 40 слів, щоб не роздувати промпт
+  const existingWords = words.slice(-40).map(w => w.word).join(', ');
 
   const prompt = `Згенеруй ${count} рандомних німецьких слів рівень складності ${selectedAiLevel} ${topicText}.
 Не повторюй ці слова: [${existingWords}].
@@ -271,7 +376,6 @@ function saveAllAiWords() {
   document.getElementById('ai-results-container').classList.add('hidden');
 }
 
-// Auto-Fill Single Word in Modal
 async function autoFillWordWithAI() {
   const wordInput = document.getElementById('modal-word').value.trim();
   if (!wordInput) {
@@ -619,7 +723,6 @@ function exportWords() {
   downloadAnchor.remove();
 }
 
-// Завантаження оновленого словаря безпосередньо як words.js
 function downloadUpdatedWordsJs() {
   const fileContent = `const defaultWords = ${JSON.stringify(words, null, 2)};`;
   

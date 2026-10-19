@@ -11,6 +11,10 @@
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <!-- Firebase Compatibility SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  
   <!-- Custom Styles -->
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -51,8 +55,12 @@
       </button>
     </nav>
 
-    <!-- Stats summary in sidebar -->
+    <!-- Sync Indicator & Stats summary -->
     <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-slate-400">Синхронізація:</span>
+        <span id="sync-status-badge" class="font-medium text-slate-500">Локальна</span>
+      </div>
       <div class="flex justify-between items-center text-xs">
         <span class="text-slate-400">Всього слів:</span>
         <span id="stat-total" class="font-bold text-white">0</span>
@@ -80,8 +88,8 @@
       </div>
 
       <div class="flex items-center space-x-2 ml-auto">
-        <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-lg transition" title="Налаштування API Ключа">
-          <i data-lucide="key" class="w-4 h-4"></i>
+        <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-lg transition" title="Налаштування API та Хмари">
+          <i data-lucide="settings" class="w-4 h-4"></i>
         </button>
         <button onclick="openAddModal()" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-3 py-1.5 rounded-lg transition font-medium">
           <i data-lucide="plus" class="w-4 h-4"></i>
@@ -279,7 +287,7 @@
           </div>
           
           <div class="flex flex-wrap gap-2">
-            <button onclick="downloadUpdatedWordsJs()" class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-xl transition font-medium" title="Завантажити оновлений файл words.js для проекту">
+            <button onclick="downloadUpdatedWordsJs()" class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-xl transition font-medium" title="Завантажити оновлений файл words.js">
               <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
               <span>Завантажити words.js</span>
             </button>
@@ -400,32 +408,52 @@
     </div>
   </div>
 
-  <!-- Settings Modal (API Key) -->
+  <!-- Unified Settings Modal (API Key & Firebase Config) -->
   <div id="settings-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center">
         <h3 class="text-lg font-bold flex items-center space-x-2">
-          <i data-lucide="key" class="w-5 h-5 text-indigo-400"></i>
-          <span>Налаштування Gemini API</span>
+          <i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i>
+          <span>Налаштування додатку</span>
         </h3>
         <button onclick="closeSettingsModal()" class="text-slate-500 hover:text-white">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Для роботи ШІ потрібен безкоштовний API-ключ Gemini від Google. Введіть його нижче — він зберігатиметься тільки у вашому браузері.
-      </p>
-
-      <div class="space-y-2">
-        <label class="block text-xs text-slate-400">Google Gemini API Key</label>
+      <!-- Section 1: Gemini API Key -->
+      <div class="space-y-2 border-b border-slate-800 pb-4">
+        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">1. Google Gemini API Key</label>
+        <p class="text-xs text-slate-400">Потрібен для генерації нових слів за допомогою ШІ.</p>
         <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="inline-block text-xs text-indigo-400 hover:underline">Отримати ключ Gemini ↗</a>
       </div>
 
-      <div class="flex justify-between items-center pt-2">
-        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-indigo-400 hover:underline">Отримати безкоштовний ключ ↗</a>
-        <button onclick="saveApiKey()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition">
-          Зберегти ключ
+      <!-- Section 2: Firebase Realtime DB Config -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">2. Google Firebase Realtime DB (Синхронізація)</label>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Вставте конфігурацію вашої безкоштовної базі Firebase, щоб слова синхронізувалися між ПК та телефоном в реальному часі. Якщо залишити порожнім — додаток працюватиме локально в браузері.
+        </p>
+
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Firebase Realtime Database URL *</label>
+          <input type="text" id="fb-db-url" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-slate-400 mb-1">Firebase Config JSON або поля (опціонально)</label>
+          <textarea id="fb-config-json" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+
+        <a href="https://console.firebase.google.com/" target="_blank" class="inline-block text-xs text-indigo-400 hover:underline">Створити безкоштовну базу Firebase ↗</a>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button onclick="saveSettings()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
+          Зберегти всі налаштування
         </button>
       </div>
     </div>
